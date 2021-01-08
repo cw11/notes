@@ -1,0 +1,66 @@
+Postman下载与安装：
+	下载地址：https://www.postman.com/downloads/
+	安装：直接双击运行即可
+接口测试：
+	什么是接口测试：
+		接口测试就是针对软件对外提供的接口的输入输出进行测试，以及接口间相互逻辑的测试，验证接口功能与接口描述文档的一致性
+	为什么做接口测试：
+		接口测试通常能够对系统测试得更为彻底，更好的保障产品质量，同时越早越底层的发现问题，修改和维护的代价也越小
+	如何做接口测试：
+		根据接口文档设计用例，调用接口，验证结果
+		没有接口文档的话：
+			1、可以用浏览器发送请求—>开发者工具 network里有相应的信息
+			2、抓包工具中也可以拿到相应信息
+postman请求部分：
+	重点关注4大信息：接口url地址、请求方法、请求头以及请求参数
+Postman接口请求过程：
+	填写接口url设置http方法设置请求头域填写请求参数
+Postman接口响应验证：
+	http状态码收到接口响应(responce)检查返回头域查看返回主体内容
+获取响应返回信息：
+	状态码、响应头、响应正文
+环境变量与全局变量：
+	Postman变量分为环境变量和全局变量两种，在街口请求中可以选择一组环境变量使用。而全局变量可以供所有请求使用
+	使用变量的格式为 {{变量名}}调用变量的值
+	添加环境变量：设置add键值对，还有环境名save
+	添加全局变量：设置globals键值对save
+	环境变量优先级高于全局变量
+Postman测试沙箱常用功能：
+	测试沙箱其实是结合js脚本完成测试中的功能，在请求发起前后实现部分测试操作
+	常用功能：
+		请求前脚本（pre-request scripts）设置请求前置操作如设置变量等
+		请求后对状态码、响应头、响应正文等信息进行断言操作
+		Postman中pre-request scripts和tests右边已经提供了很多种方法，可以直接点击使用。
+		Pre-request script中(不常用)：
+			var city = pe.environment.get(“cityname”);
+					定义一个变量city接收postman当前选择环境中的变量cityname
+			console.log(city);
+					通过postman的控制台打印此变量city
+			pe.environment.set(“cityname”,”武汉”);
+					设置postman中cityname的值为武汉
+		Tests(常用):
+			pm.test(“验证状态码是200”，function(){Pe.response.to.hava.status(200))});
+					验证状态码是200这个测试用例的断言，function后面是断言
+			pe.test(“在返回结果主体中包含武汉”，function(){pm.expect(pm.response.text()).to.include(“武汉”));
+					在返回结果主体中包含武汉这个测试用例的断言，其中”武汉”词汇可能需要unicode编码
+			pm.test(“验证返回中city的值为武汉”,function(){var jsonData = pm.response.json();
+			pm.expect(jsonData.city).to.eql(“武汉”))；
+					用json格式校验在返回结果主体中包含武汉这个测试用例的断言
+			注意：双引号要转义
+			Pm.test(“第一个债券的credit_rating是长江证券”, function(){var jsonData = pm.response.json();
+			pm.expect(jsonData[0).credit_rating.to.eql(“长江证券);});
+					对于中括号中有好几个大括号的情况，验证第一个大括号里的credit_rating是长江证券
+
+测试管理-测试集与数据驱动：
+		为了更方便地管理接口请求的执行，可以通过postman测试集(collection)来完成测试的操作，每一个测试请求可以看成一个测试用例(testcase)，collections能够一次管理多个测试用例来执行。通过save，能够将请求保存到collections中使用
+		测试集：一个包里的case—>Runner设置环境等等信息run看日志里的断言
+		数据驱动：当需要进行数据驱动方式运行多次postman脚本时，可以通过csv文件或者json格式的文件对接口测试数据进行管理，以便用例管理执行
+	方式一：在接口请求中，参数使用变量名获取，之后在创建数据文件时，使用这些变量名编辑测试数据
+	方式二：在测试沙箱中，参数的获取用data.参数名的形式来进行读取
+	数据驱动：runnerdataselect file(存为csv文件的数据)—>预览一下
+	注意：将数据驱动的编码改为utf-8(preview检查一下)
+	
+Postman接口请求使用cookie:
+	两种方式：
+		1、直接在头域中添加cookie头域，适用于已知请求时的cookie头域的情况(也就是能拿到cookie，比如浏览器中)
+		2、使用postman的cookie管理机制，即可以手动添加，同时postman也会将操作流程中获取的参数自动保存，因此可以通过调用前置接口来完成cookie获取（点击cookie，输入你访问的域名addadd cookie按照它的模板从application中拿到cookie里的键值对一一填写，一般填写sessionid就可以了）

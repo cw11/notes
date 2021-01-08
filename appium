@@ -1,0 +1,793 @@
+appium
+
+po模式框架：
+	1、
+		配置文件config：config.ini
+		配置文件的目录:global.config.py:获取日志路径、测试用例路径、测试报告路径、测试数据路径
+	2、data测试数据：TestData.xlsx
+	3、log日志：Log.py:日志类，设置日志类
+	4、public公共文件库：
+		common:封装的公共的方法
+			desired_caps.py:封装app应用信息字典
+			DoExcel.py：操作excel，数据驱动
+			Send_mail.py:发送邮件，测试报告给团队其他人员
+			ReadConfigIni.py:读取ini格式的配置文件
+			TestCaseInfo.py:测试用例信息
+		pages:
+			BaseView.py:基类，对一些公共方法进行定义、属性封装，webdriver的一些方法的二次封装
+			weixin.py:测试场景
+	5、report报告：
+		log日志目录
+		testreport:测试报告
+		images:截图
+	6、TestCase测试用例
+		TC_weixin.py
+	7、Run.py:控制测试用例的运行
+
+环境搭建（android）：
+	1、android模拟器：实际上就是一台手机，展示效果
+		模拟器genymotion
+	2、androidSDK：androidSDK给我们提供开发测试所必须的android API类库
+		配置:
+			1、在系统变量下点击新建->变量名：ANDROID_HOME -> 路径 ->确定
+			2、在系统变量下找到系统的path路径，添加一段（百度一下）->确定
+	3、java:android的底层是c c++,应用层是java，所以需要java环境
+adb:
+	adb概念：是一个调试工具
+		开发安卓应用的程序员必须要掌握
+		测试工程师在做安卓应用测试时，会使用到
+	adb的构成：
+		client端：运行在开发机器中，即你的开发电脑，用来发送adb命令
+		daemon守护进程：运行在测试设备（手机）中，用来接收并执行adb命令
+		server端：同样运行在开发机器中，用来管理client端和daemon之间的通信
+	adb工作原理:
+		client端将命令发送给server端
+		server端会将命令发送给daemon端
+		daemon端进行执行
+		将执行结果返回给server端
+		server端将结果返回给client端
+	adb常用命令：
+		包名和界面的概念：
+			包名（package）：决定程序的唯一性（不是应用的名字）
+			界面名(activity)：可以理解为一个界面名对应着一个界面
+		获取包名和界面名：
+			1、打开需要测试的应用程序
+			2、输入adb命令
+				mac/linux：adb shell dumpsys window windows | grep mFocusedApp
+				windows:adb shell dumpsys window windows | findstr mFocusedApp
+			/前面是包名，/后面是界面名(也叫启动名)
+		电脑发送文件到手机：
+			adb push 电脑的文件路径 手机的文件路径
+			例：将桌面的a.txt发送到手机的sd卡：
+			adb push c:\users\hh\a.txt /sdcard
+		从手机中拉取文件到电脑
+			adb pull 手机的文件路径 电脑的文件夹路径
+		获取app启动时间
+			应用场景：
+				1、如果企业对应用程序的启动速度有要求，则需要使用这个命令进行测试
+				2、测试标准：参照同类软件，启动时间不能超出一倍即可
+			命令格式：adb shell am start -w 包名/启动名
+			例：启动com.android.settings程序并且进入主界面（.settings）
+			adb shell am start -w com.android.settings/.settings
+
+			thistime:该界面activity启动耗时（毫秒）
+			totaltime：应用自身启动耗时=thistime + 应用application等资源启动时间（毫秒）
+			waittime：系统启动应用耗时=totaltime+系统资源启动时间（毫秒）
+		获取手机日志：
+			应用场景：将bug日志信息发送给开发人员，便于开发人员定位bug,需要找日志中的”at“前面的第一个字符是E的就是错误日志信息
+			使用步骤：
+				1、打开需要测试的应用程序
+				2、找到触发bug的位置
+				3、使用查看日志命令adb logcat
+				4、触发bug
+				5、获取日志信息
+			命令格式：adb logcat
+		其他命令：
+			adb install 路径/xx.apk :安装app到手机
+			adb uninstall 包名：卸载手机上的app,需要指定包名
+			adb devices:获取当前电脑已经连接设备和对应的设备号
+			adb shell:进入到安卓手机内部的Linux系统命令行中
+			adb start-server:启动adb服务端，出bug时使用可以重启服务器，先关闭再启动
+			adb kill-server:停止adb服务端，出bug时使用可以重启服务器，先关闭再启动
+			adb --help:查看adb帮助，命令记不清楚时有用
+appium自动化
+	appium介绍：
+		一个移动端的自动化框架，可用于测试原生应用，移动网页应用和混合型应用，且是跨平台的。
+	appium自动化测试环境搭建：
+		appium的客户端
+		appium-python库
+	参数代码（前置代码）：
+		#导模块
+		from appium import webdriver
+
+		#就是个字典，键值对
+		desired.caps=dict()
+		#平台名字，大小写无所谓
+		desired.caps['platformName'] = 'Android'
+		#平台版本，关于手机里面的android版本号
+		desired.caps['platformVersion'] = '5.1'
+		#设备名字，随便写，但不能为空,但ios中严格写iphone12
+		desired.caps['deviceName'] = '192.168.56.101:5555'
+		#要打开的应用程序（包名）
+		desired.caps['appPackage'] = 'com.android.settings'
+		#界面名
+		desired.caps['appActivity'] = '.settings'
+		#获取driver
+		driver = webdriver.Remote('http://localhost:4723/wd/hub',desired_caps)
+		#退出应用
+		driver.quit()
+
+		步骤：
+			1、打开要测试的应用
+			2、使用adb命令获取包名和界面名
+			3、修改desired_caps字典中的appPackage和appActivity
+		启动过程：
+			appium的启动实际上是在本机使用了4723端口开启了一个服务
+			1、我们写的python代码会访问本机的appium服务器，并获取driver对象
+			2、appium会将我们的driver对象调用的方法转化成post请求，提交给appium服务器
+			3、appium通过接收到的post请求发送给手机，再由手机进行执行
+appium基础操作API
+	在脚本内启动其他app
+		应用场景：
+			如果一个应用需要跳转到另外一个应用，就可以使用这个api进行应用的跳转，就像我们通过外卖应用下订单之后会跳转到支付应用一样
+		方法名和参数：
+			参数：
+				appPackage包名
+				appActivity界面名
+			方法名：
+				driver.start_activity(appPackage,appActivity)
+		#导模块
+		from appium import webdriver
+
+		#就是个字典，键值对
+		desired.caps=dict()
+		#平台名字，大小写无所谓
+		desired.caps['platformName'] = 'Android'
+		#平台版本，关于手机里面的android版本号
+		desired.caps['platformVersion'] = '5.1'
+		#设备名字，随便写，但不能为空,但ios中严格写iphone12
+		desired.caps['deviceName'] = '192.168.56.101:5555'
+		#要打开的应用程序（包名）
+		desired.caps['appPackage'] = 'com.android.settings'
+		#界面名
+		desired.caps['appActivity'] = '.settings'
+		#获取driver
+		driver = webdriver.Remote('http://localhost:4723/wd/hub',desired_caps)
+
+		#跳转其他应用程序
+		driver.start_activity("com.android.mms",".ui.conversationlist")
+		#退出应用
+		driver.quit()
+	获取app包名和界面名
+		应用场景：
+			当我们从一个应用跳转到另外一个应用的时候，想输出其包名、界面名
+		方法：
+			获取包名：driver.current_package
+			获取界面名：driver.current_activity
+		示例：
+			输出当前程序的包名和界面名
+			print(driver.current_package)
+			print(driver.current_activity)
+	关闭app和驱动对象
+		应用场景：
+			有的时候我们需要关闭某个应用程序后，再打开新的应用，那么如何关闭应用程序呢
+		方法名：
+			#关闭当前操作的app，不会关闭驱动对象
+			driver.close_app()
+			#关闭驱动对象，同时关闭所有关联的app
+			driver.quit()
+	安装和卸载以及判断是否安装app
+		#安装app
+			参数：
+				app_path apk路径
+			方法名：
+				driver.install_app(app_path)
+		#卸载app
+			参数：
+				app_id 应用程序包名
+			方法名：
+				driver.remove_app("app_id")
+		#判断app是否已经安装
+			参数：
+				app_id 应用程序包名
+			返回值：布尔类型true false
+			方法名：
+				driver.is_app_installed("app_id")
+	将应用置于后台
+		应用场景：
+			银行类app会在进入后台一定时间后，如果再回到前台页面会需要重新输入密码，如果需要自动化测试这种功能，可以使用这个api进行测试
+		方法：
+			#app放置到后台一定时间再回到前台，模拟热启动
+			#参数：seconds 后台停留多少秒
+			#方法：driver.background(seconds)
+		示例：
+			#进入后台5秒，再回到前台
+			driver.background(5)
+UIAutomatorViewer
+	简介：UIAutomatorViewer用来扫描和分析android应用程序和UI控件的工具
+	使用步骤：
+		1、进入android SDK目录下的目录
+			mac在tools/bin目录下，打开UIAutomatorViewer
+			windows在tools目录下，打开UIAutomatorViewer.bat
+		2、电脑连接真机或打开android模拟器
+		3、启动待测试app
+		4、点击UIAutomatorViewer的左上角device screenshot(从左数第二个按钮)
+		5、点击希望查看的控件
+		6、查看右下角node detail相关信息
+元素定位操作API
+	定位一个元素：
+		应用场景：
+			想要对按钮进行点击，想要对输入框进行输入，想要获取文本框的内容，定位元素是自动化操作必须要使用的方法，只有获取元素之后，才能对这个元素进行操作
+
+		#通过id定位一个元素
+		#参数：id_value :元素的resource_id属性值
+		#返回值：定位到的单个元素
+		driver.find_element_by_id(id_value)
+
+		#通过class_name定位一个元素
+		#参数：class_value :元素的class属性值
+		#返回值：定位到的单个元素
+		driver.find_element_by_class_name(class_value)
+
+		#通过xpath定位一个元素
+		#参数 xpath_value 定位元素的xpath表达式
+		#返回值：定位到的单个元素
+		driver.find_element_by_xpath(xpath_value)
+
+		示例：
+		通过id的形式，定位“放大镜”按钮，并点击
+		driver.find_element_by_id("com.android.settings:id/search").click()
+
+		通过class的形式，定位"输入框"，并输入hello
+		driver.find_element_by_class_name("android.widget.EditText").send_keys("hello")
+
+		通过xpath形式，定位"返回"按钮，并点击
+		driver.find_element_by_xpath("//*[@content-desc='收起").click()
+
+		注意：
+			如果很多元素的"特征"相同，会找到第一个
+			也就是说，尽量去找元素特征有唯一性的
+
+	定位一组元素：
+		应用场景：和定位一个元素相同，但如果想要批量的获取某个相同特征的元素，使用定位一组元素的方式更加方便
+
+		概念：如果通过一组的方式进行定位，获取的返回值不再是一个元素，而是一个列表，列表中装着所有符合这个特征的元素
+
+		#通过id定位一组元素
+		#返回值：定位到的所有条件符合的元素
+		driver.find.elements_by_id(id_value)
+
+		#通过class_name定位一组元素
+		#返回值：定位到的所有条件符合的元素
+		driver.find_elements_by_class_name(class_value)
+
+		#通过xpath定位一组元素
+		#返回值：定位到的所有条件符合的元素
+		driver.find_elements_by_xpath(xpath_value)
+
+		示例：
+		通过id形式，获取所有resource_id为"com.android.settings:id/title"的元素，并打印其文字内容
+		titles = driver.find.elements_by_id("com.android.settings:id/title")
+		print(titles)
+
+
+		通过class_name形式，获取所有class为"com.android.widget.textview"的元素，并打印其文字内容
+		text = driver.find.elements_by_id("com.android.widget.textview")
+		print(text)
+
+		通过xpath的形式，获取所有包含"设"的元素，并打印其文字内容
+		eles = driver.find_elements_by_xpath("//*[contains(@text,'设')]")
+		print(len(eles))
+		for i in eles:
+			print(i.text)
+
+		注意：
+		1、如果使用find_element_by_xx方法，如果传入一个没有的特征，会报NosuchElementException的错误
+		2、如果使用find_elements_by_xx方法，如果传入一个没有的特征，不会报错，会返回一个空列表
+
+元素等待：
+	应用场景：可能由于一些原因，我们想找的元素并没有立刻出来，此时如果直接定位可能会报错，比如以下原因：
+		1、由于网络速度原因
+		2、服务器处理请求原因
+		3、电脑配置问题
+	显示等待
+		应用场景：针对所有定位元素的超时时间设置为不同的值的时候
+		概念：等待元素加载指定的时长，超出时长抛出TimeoutException
+		步骤：
+			1、导包
+			2、创建webdriverwait对象
+			3、调用webdriverwait对象的until方法
+
+		示例：在5秒钟内。每1秒在设置中的返回按钮，如果找到则点击，如果找不到九报对应的错误信息
+		from selenium.webdriver.support.wait import webdriverwait
+		---
+		#启动应用参数
+		---
+		#创建webdriverwait对象
+		#获取元素并设置超时时间和频率(默认0.5s)
+		search_button = webdriverwait(driver,5,poll_frequency = 1).until(lambda x : x.find_element_by_xpath("//*[contains(@content-desc,'收起'')]"))
+		#点击搜索按钮
+		search_button.click()
+
+	隐式等待
+		应用场景：针对所有定位元素的超时时间设置为同一个值的时候
+
+		概念：等待元素加载指定的时长，超出时长抛出NoSuchElementException异常
+
+		步骤：在获取driver对象后，使用driver调用implicitly_wait方法即可
+
+		示例：示例：在5秒钟内。每1秒在设置中的返回按钮，如果找到则点击，如果找不到就报对应的错误信息
+		#前置代码
+		driver.implicitly_wait(5)
+		search_button = driver.find_element_by_xpath("//*[contains(@content_desc,'收起')]")
+		search_buttopn.click()
+
+	隐式等待和显式等待的选择：
+		作用域：显式等待为单个元素有效，隐式为全局元素
+		方法：显示等待方法封装在webdriverwait类中，而隐式等待则直接通过driver实例化对象调用
+		从使用的角度上：
+			隐式等待更简单，显式等待相对复杂
+		从灵活性的角度上：
+			显示等待更加灵活，可以针对每一个元素进行单独的设置
+			隐式等待是针对全局的定位元素
+		关于sleep:
+			sleep是固定一个时间，不是不能做元素等待，是不推荐
+			元素等待可以让元素出来的第一时间进行操作，sleep可能造成不必要的浪费
+元素操作API
+	点击元素（某个按钮）：element.clik()
+	输入文字：element.send_keys("value")
+	清空文字:element.clear()
+
+	注意：
+		默认输入中文无效，但不会报错，需要在"前置代码"中添加两个参数
+		desired_caps['unicodeKeyboard']=true
+		desired_caps['resetKeyboard']=true
+
+	获取元素的文本内容: element.text
+	获取元素的位置：element.location 是一个字典，字典中有x和y两个key，取出的数据类型是int
+	获取元素的大小：element.size 是一个字典，字典中有weigth和height两个key，取出的类型是int
+
+	获取元素的属性值：
+		应用场景：根据特征定位到元素后，使元素的属性名获取对应的属性值（有的按钮有的时候是灰色的不可点状态，有的时候是红色的）
+
+		#根据属性名获取属性值
+		#对element进行点击操作
+		#参数 value要获取的属性名
+		#返回值：根据属性名得到的属性值
+		element.get_attribute("属性名")
+
+		示例：
+		title = driver.find_element_by_id("xxx")
+		print(title.get_attribute("text"))
+
+滑动和拖拽
+	swipe滑动事件：
+		概念：从一个坐标位置滑动到另一个坐标位置，只能是两个点之间的滑动
+
+		#参数
+		start_x 起点x轴坐标
+		start_y 起点y轴坐标
+		end_x   终点x轴坐标
+		end_y   终点y轴坐标
+		duration 滑动这个操作一共持续的时间长度
+		driver.swipe(start_x,start_y,end_x,end_y,duration=None)
+
+	scroll滑动事件
+		概念：从一个元素滑动到另一个元素，知道页面自动停止
+
+		#参数
+		origin_el 滑动开始的元素
+		destination_el 滑动结束的元素
+		driver.scroll(origin_el,destination_el)
+
+		示例：从存储滑动到更多
+		save_button=driver.find_element_by_xpath("//*[@text='存储']")
+		more_button=driver.find_element_by_xpath("//*[@text='更多']")
+		driver.scroll(save_button,more_button)
+
+		注意：不能设置持续时间，惯性很大
+	drag_and_drop
+		driver.dragand_drop(起始元素，结束元素)
+		和scroll一样
+	滑动和拖拽事件的选择：
+		有惯性，传入元素：scroll
+		无惯性，传入元素：drag_and_drop
+		有惯性，传入坐标：swipe，并且设置较短的duration时间
+		无惯性，传入坐标：swipe, 并且设置较长的duration时间
+高级手势TouchAction
+		应用场景：手势解锁
+		使用步骤：
+			1、创建TouchAction对象
+			2、通过对象调用想执行的手势
+			3、通过perform()执行动作
+
+		手指轻敲操作：
+			应用场景：模拟手指对某个元素或坐标按下并快速抬起
+			#模拟手指对元素或坐标的轻敲操作
+			#参数：
+				element 元素
+				x x坐标
+				y y坐标
+			传元素或坐标都可以
+			多次点击,后面加一个参数count=value
+			TouchAction(driver).tap(element=None,x=None,y=None).perform()
+
+			示例：打开设置，轻敲wlan
+			el = driver.find_element_by_xpath("//*[contains(@text,'wlan')]")
+			TouchAction(driver).tap(el).perform()
+
+		按下和抬起操作：
+			应用场景：模拟手指一直按下，模拟手指抬起，可以用来组合成轻敲或长按的操作
+			TouchAction(driver).press(el=None,x=None,y=None).perform()
+
+			TouchAction(driver).release(el=None,x=None,y=None).perform()
+
+		等待操作：
+			应用场景：模拟手指等待，比如按下后等待5秒送=之后抬起
+			TouchAction(driver).wait(ms=0).perform()
+
+		长按操作：
+			应用场景：模拟手指对元素或坐标的长按操作，比如长按某个按钮弹出菜单
+			duration:持续时间
+			TouchAction(driver).long_press(el=None,x=None,y=None,duration=1000).perform()
+
+		移动：
+			应用场景：模拟手指移动操作
+			TouchAction(driver).move_to(el=None,x=None,y=None).perform()
+
+			move_to可以连写，如果代码过长，可以使用回车换行，换行的时候默认会多一个右斜线，是正常的
+手机操作API：
+		获取手机分辨率
+			driver.get_window_size()
+			得到一个字典，height weight，值是int类型
+		获取手机截图
+			driver.get_screenshot_as_file("screen.png")
+			默认保存到当前目录
+			driver.get_screenshot_as_file("/users/caiwei/desktop/screen.png")
+			保存到指定目录
+		获取和设置网络状态
+			driver.network_connection
+			driver.set_network_connection(value)
+				value  类型
+				1      飞行模式
+				2		wifi
+				4       data
+				6       data and wifi
+			注意：
+				网络的类型，建议使用系统提供的类型
+				from appium webdriver.connectiontype import connectionType
+		发送键到设备
+			应用场景：
+				模拟按返回键 home键，比如，很多应用有按两次返回键退出应用的功能，这个功能自动化的话就得用到此方法
+			#参数：
+				keycode 发送给设备的关键代码
+				不同的数值代表不同的键，到时候查看源码
+				metastate 关于被发送的关键代码的元信息，一般为默认值
+			driver.pree_keycode(keycode,metastate=None)
+		打开和关闭手机通知栏	
+			driver.open_notifications()
+			关闭没有api，就用滑动或点击返回键
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	

@@ -1,0 +1,128 @@
+git：
+        git：分布式版本控制系统
+        一、git在macOS上的安装：
+                1、安装homebrew，然后通过homebrew安装Git，具体方法请参考homebrew的文档：http://brew.sh/。
+                2、更简单，也是推荐的方法，就是直接从AppStore安装Xcode，Xcode集成了Git，不过默认没有安装，你需要运行Xcode，选择菜单“Xcode”->“Preferences”，在弹出窗口中找到“Downloads”，选择“Command Line Tools”，点“Install”就可以完成安装了。
+        二、创建版本库（ repository）：
+                1、在合适的地方mkdir ku,也就是创建一个空目录
+                2、使用git init命令把这个目录变成git可以管理的仓库
+                注：此时当前目录下多了一个.git的目录，这个目录是git用来跟踪管理版本库的，不要手动修改这个目录里的文件，改乱了就把git仓库破坏了
+       三、把文件放到git仓库：
+                1、git add xxx.txt
+                2、git commit -m "此次提交的说明，方便自己和他人阅读"
+
+                  Q：输入git add readme.txt，得到错误：fatal: not a git repository (or any of the parent directories)。
+                  A：Git命令必须在Git仓库目录内执行（git init除外），在仓库目录外执行是没有意义的。
+                  Q：输入git add readme.txt，得到错误fatal: pathspec 'readme.txt' did not match any files。
+                  A：添加某个文件时，该文件必须在当前目录下存在，用ls或者dir命令查看当前目录的文件，看看文件是否存在，或者是否写错了文件名。         
+               3、git status ：查看当前仓库状态（哪些文件被修改过）
+               4、git diff a.txt b.txt： 查看两个文件的不同（查看修改的内容）
+               5、git log (--pretty=oneline)：显示从近到远的提交日志，后面的选项是在一行显示（可以查看提交历史，以便确定要退到哪个版本
+               6、git reset --hard HEAD^：回退到上一个版本，HEAD^上一个版本，HEAD^^上上一个版本
+               7、git reflog：查看命令历史，以便确定要回到未来哪个版本，git reset --hard 1094a，1094a是你想回到的版本号，写前几位就行，不用写全
+
+              工作区（working directory）：就是电脑里能看到的目录，就是一个文件夹
+              版本库（repository）：工作区中有一个隐藏目录.git，这个不算工作区，而是git的版本库
+              暂存区（stage）：git版本库里的
+              Git add：把文件添加进去，实际上就是把文件修改添加到暂存区
+              Git commit：提交更改，实际上就是把暂存区里的所有内容提交到当前分支
+              Git checkout--readme.txt:把readme.txt文件在工作区的修改全部撤销，（其实是用版本库里的版本替换工作区的版本，相当于一键复原），有两种情况：
+        	       1、一种是readme.txt自修改后还没有被放到暂存区，现在，撤销修改就回到和版本库一模一样的状态
+        	       2、一种是readme.txt已经添加到暂存区后，又作了修改，现在撤销就回到添加到暂存区的状态
+              注意：git checkout -- file命令中的--很重要，没有--，就变成了“切换到另一个分支”的命令，我们在后面的分支管理中会再次遇到git checkout命令。
+
+      四、撤销修改
+              Git reset HEAD readme.txt 把暂存区的修改撤销掉，重新放回工作区（git reset命令既可以回退版本，也可以把暂存区的修改回退到工作区。当我们用HEAD时，表示最新版本）
+              场景1：当你改乱了工作区某个文件的内容，想直接丢弃工作区的修改时，用命令git checkout -- file。
+              场景2：当你不但改乱了工作区某个文件的内容，还添加到了暂存区时，想丢弃修改，分两????????????????git reset HEAD <file>，就回到了场景1，第二步按场景1操作。
+              场景3：已经提交了不合适的修改到版本库时，想要撤销本次提交，参考版本回退一节，不过前提是没有推送到远程库。
+
+              Git rm readme.txt：删除版本库里的文件，然后Git commit
+      五、github
+          远程仓库：就是远程库，现阶段用github
+              生成ssh key
+                  ssh-keygen -t rsa -C "youremail@example.com"
+              添加key到github上
+                  Cd ~/.ssh
+                  Cat id_rsa.pub
+              将本地关联到github远程库：
+                  Git remote add origin git@github.com:cw11/studyku.git
+              将本地内容推送到远程库上：
+                  Git push origin master
+              将远程库克隆一个本地库：（要克隆一个仓库，首先要知道仓库地址，然后使用git clone，git支持多种协议，包括https,但ssh协议速度最快）
+                  Git clone git@github.com:cw11/gitskills.git
+      六、分支创建与管理
+              git checkout –b dev :创建分支dev并切换到分支上
+              git checkout命令加上-b参数表示创建并切换，相当于两条命令：
+                  git branch dev
+                  git checkout dev
+              git branch dev:创建分支
+              git checkout dev：切换分支到dev
+              git checkout master:切换分支到master
+              git banch：查看当前分支
+              git merge dev:用于合并指定分支（dev）到当前分支（master）
+              git branch –d dev：删除dev分支
+              为了让it checkout命令和前面的撤销修改不迷惑，可以使用swich命令：
+                  git switch –c dev：创建并切换到新的dev分支
+                  git switch master:切换到master分支
+              查看分支：git branch
+              创建分支：git branch <name>
+              切换分支：git checkout <name>或者git switch <name>
+              创建+切换分支：git checkout -b <name>或者git switch -c <name>
+              合并某分支到当前分支：git merge <name>
+              删除分支：git branch -d <name>
+
+            1、修复bug时，我们会通过创建新的bug分支进行修复，然后合并，最后删除
+            2、当手头工作还没有做完时，先把工作现场git stash(隐藏)一下，然后去修复bug，修复后，再git stash pop,回到工作现场
+            3、在master分支上修复的bug，想要合并到当前dev分支，可以用git cherry-pick master分支的版本号（前几位）
+            如果要丢弃一个没有被合并过的分支，可以通过git branch –D 分支名 强行删除
+            Git remote –v：显示远程库的详细信息
+
+      七、多人协作时
+      	     1、首先，可以试图用git push origin <branch-name>推送自己的修改；
+      	     2、如果推送失败，则因为远程分支比你的本地更新，需要先用git pull试图合并；
+      	     3、如果合并有冲突，则解决冲突，并在本地提交；
+      	     4、没有冲突或者解决掉冲突后，再用git push origin <branch-name>推送就能成功！
+
+            注：如果git pull提示no tracking information，则说明本地分支和远程分支的链接关系没有创建，用命令git branch --set-upstream-to <branch-name> origin/<branch-name>。
+
+            小结：
+            查看远程库信息，使用git remote -v；
+            本地新建的分支如果不推送到远程，对其他人就是不可见的；
+            从本地推送分支，使用git push origin branch-name，如果推送失败，先用git pull抓取远程的新提交
+            在本地创建和远程分支对应的分支，使用git checkout -b branch-name origin/branch-name，本地和远程分支的名称最好一致；
+            建立本地分支和远程分支的关联，使用git branch --set-upstream branch-name origin/branch-name；
+            从远程抓取分支，使用git pull，如果有冲突，要先处理冲突。
+
+            查看提交历史分支变化：
+            git log --graph --pretty=oneline --abbrev-commit
+            git rebase:可以把未push的分叉提交历史整理成直线
+                rebase的目的是使得我们在查看历史提交的变化时更容易，因为分叉的提交需要三方对比
+    
+      八、标签
+            创建标签：
+              1、切换到需要打标签的分支上：
+                  Git checkout dev
+              2、打标签
+                  git tag v1.0
+            查看标签：
+                git tag
+            若某一过期的commit忘了打tag怎么办：
+                1、找到历史提交的commit id:
+                    git log –pretty=oneline –abbrev-commit
+                2、git tag v0.5 f52c622
+            还可以创建带有说明的标签，用-a指定标签名，-m指定说明文字：
+                git tag –a v1.0 –m “version 1.0” 1092av
+            注意：tag不是按时间顺序列出，而是按字母排序，可以用git show <tagname>查看标签信息
+
+            如果标签打错了，也可以删除：
+                git tag –d v1.0
+            推送某个标签到远程：
+                git push origin v1.2
+            一次性推送全部尚未推送到远程的本地标签：
+                git push origin –tags
+            如果要删除远程的标签：
+                1、先从本地删除：
+                    git tag –d v1.2
+                2、再从远程删除：
+                    git push origin:refs/tags/v1.2

@@ -1,0 +1,108 @@
+charles抓包：
+
+一、目标：  	
+			能够用charles来分析前后端的问题
+            能够用charles模拟弱网测试场景
+            能使用charles的断点构建异常的测试场景
+二、charles是什么？
+            基于http协议的代理服务器，通过成为电脑和浏览器的代理，然后截取请求和请求结果达到分析抓包的目的
+三、charles的工作原理
+            前置步骤：
+                    1、需要运行charles并配置代理
+                    2、在客户端上面需要配置代理
+            步骤：
+                    1、由客户端发送请求
+                    2、charles接收再发送给服务器
+                    3、服务端返回请求结果给charles
+                    4、由charles转发给客户端
+四、charles能做什么
+            1、支持http和https
+            2、支持流量控制
+            3、支持接口并发请求
+            4、支持重发网络请求
+            5、支持断点调试
+五、charles的优点
+            1、能够支持linux macOs
+            2、支持按域名和按接口查看报文，简洁明了
+            3、支持反向代理
+            4、网络限速可选择网络类型
+            5、可以解析AMF协议
+
+六、charles安装与配置：
+            下载：https://www.charlesproxy.com/
+七、charles代理设置：
+            proxy --> proxy settings --> port --> ok
+八、charles访问控制：
+            proxy --> access control settings --> 点击add --> 此时可以编辑输入框，可输入ip地址(可勾选允许或不允许其他IP地址访问) --> ok
+九、查看当前电脑的ip地址：
+            help -- local ip address
+十、代理设置：
+	客户端-windows代理设置：
+	            1、在chrome浏览器中输入chrome://setting
+	            2、在搜索框中输入“代理”
+	            3、点击“打开您计算机的代理设置”
+	            4、在手动设置代理中 开启代理
+	            5、在地址输入框中输入charles的ip地址以及端口
+	            5、点击保存，关闭页面
+	客户端-macOS代理设置
+	            苹果图标 -- 系统偏好设置 -- 网络 -- 高级 -- 代理 -- 勾选web代理（http https）-- 输入代理ip地址和端口号 -- 好 -- 应用
+	客户端-macOS快捷代理设置：
+	            如果macOS客户端与运行charles软件的电脑是同一台电脑时，可以通过快捷代理设置方式来进行设置
+	            打开charles工具后 -- 选择 proxy 中的macOS proxy 选项
+	客户端-IOS手机代理设置：
+	            1、在ios手机中选择“设置”-“无线局域网”
+	            2、点击已连接的无线网络名称
+	            3、在http代理的配置代理中选择“手动”
+	            4、输入服务器ip地址及端口，点击存储
+	客户端 – android手机代理设置
+				1、在android手机中选择“设置”- “wlan”
+				2、长按已连接的无线网络名称，点击“修改网络”
+				3、勾选“显示高级选项”
+				4、在代理选择项中选择“手动”
+				5、输入服务器ip地址及端口，点击“存储”
+十一、抓包分析问题：
+    Charles代理配置—客户端代理配置—操作客户端软件—分析请求数据
+	https抓包：
+   		windows证书配置：
+			1、打开charles，选择help -- ssl proxying – install Charles root certificate
+			2、在打开的证书框中，点击“安装证书”，选择“本地计算机”，点击“下一步”
+			3、选择“将所有证书都存放下列存储”，再点击“浏览”
+			4、选择“受信任的根证书颁发机构”，点击“确定”—下一步—完成
+
+
+		Charles https代理配置：
+			1、在charles窗口中点击菜单“proxy” – ssl proxying setting
+			2、在打开的设置窗口中勾选“enable ssl proxying ”
+			3、点击ok
+
+
+		macOS证书配置：
+			1、打开charles，选择help – ssl proxy – install Charles root certificate
+			2、 双击打开证书，信任 — 使用此证书 — 始终信任
+
+
+		Ios证书配置：
+			1、在电脑上运行charles，且ios手机设置好代理，在浏览器中地址栏输入：http://charlesproxy.com/getssl
+			2、手机设置—已下载的描述文件—找到证书—安装
+			3、返回到通用页面，选择关于本机
+			4、点击证书信任设置，启用charles proxy CA证书并确认
+
+
+		Charles流量配置：
+			1、在charles窗口中点击菜单proxy – throttle setting
+			2、在打开的设置窗口中勾选enable throtting
+			3、在throttle preset 下拉框中选择对应的网络类型(有很多种选择，也可以自定义网速)
+			4、点击ok
+
+
+		Charles断点配置
+    		作用：用来构建异常的测试场景
+			1、点击接口链接，选择breakpoints
+			2、在浏览器刷新对应接口的页面
+			3、此时会自动跳转到charles并显示出接口请求信息
+			4、点击edit request,修改请求信息，点击execute
+			5、点击edit response
+			6、在数据格式栏中选择合适的显示格式，比如json
+			7、修改对应的数据，点击execute
+			8、回到浏览器查看数据应该为修改之后的response的信息
+

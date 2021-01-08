@@ -1,0 +1,54 @@
+TestNg
+
+BeforeTest测试方法运行之前运行
+AfterTest测试方法运行之后运行
+Parameters将参数传递给@Test方法
+Test将类或方法标记为测试的一部分
+
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
+
+public class Test_01{
+	@BeforeTest
+	public void Before(){
+		System.out.println(“测试之前”)；
+	}
+
+	//case
+	@Test
+	public void test_01(){
+		//断言
+		Assert.assertEquals("tim","tim1","比较")
+	}
+
+	@Test
+	public void test_01(){
+		Assert.assertEquals("tim1","tim1","比较")
+	}
+
+	@AfterTest
+	public void After(){
+		System.out.println(“测试结束”)；
+	}
+}
+
+
+
+@DataProvider()
+public Object user(){
+	return new Object{
+		{"tim","123"},
+		{"tim2","1234"},
+		{"tim3","tim3"}
+	};
+}
+
+@Test(dataProvider="user")
+public void test_01(String username,String passwd){
+	System.out.println(username+"_"+passwd)；
+	Assert.assertEquals(username,passwd)
+}
+
+TestNg执行selenium脚本
+	（1）通过run执行
+	（2）通过Testng.xml执行

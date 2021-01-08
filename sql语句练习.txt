@@ -1,0 +1,350 @@
+1、学生表
+	Student(s_id,s_name,s_birth,s_sex) 学生编号、学生姓名、出生年月、学生性别
+2、课程表
+	Course(c_id,c_name,t_id) 课程编号，课程名称，教师编号
+3、教师表
+	Teacher(t_id,t_name) 教师编号，教师姓名
+4、成绩表
+	Score(s_id,c_id,s_score) 学生编号，课程编号，分数
+
+
+一、建表
+	学生表：
+		create table 'Student'(
+		's_id' VARCHAR(20),
+		's_name' VARCHAR(20) NOT NULL DEFAULT '',
+		's_birth' VARCHAR(20) NOT NULL DEFAULT '',
+		's_sex' VARCHAR(20) NOT NULL DEFAULT '',
+		PRIMARY KEY('s_id')
+		);
+		
+	课程表
+		create table 'Course' (
+		'c_id' varchar(20),
+		'c_name' varchar(20) not null default '',
+		't_id' varchar(20) not null,
+		primary key('c_id')
+		);
+		
+	教师表
+		create table 'Teacher'(
+		't_id' varchar(20),
+		't_name' varchar(20) not null default '',
+		primary key('t_id')
+		);
+		
+	成绩表
+		create table 'Score' (
+		's_id' varchar(20),
+		'c_id' varchar(20),
+		's_score' int(3),
+		primary key('s_id','c_id')
+		);
+		
+	1、查询01课程比02课程成绩高的学生的信息及课程分数
+	select st.*,sc.s_score as '语文',sc2.s_score as '数学'
+	from Student st
+	left join Score sc on st.s_id = sc.s_id and sc.c_id = '01'
+	left join Score sc2 on st.s_id = sc.s_id and sc2.c_id = '02'
+	where sc.s_score > sc2.s_score
+	
+	查询既学过01课程又学过02课程的学生信息--自关联就能得到其公共的
+	select *
+	from (select * from sc where c_id = '01') a
+	inner join (select * from sc where c_id = '02') b
+	on a.s_id = b.s_id
+
+	select *
+	from sc a
+	inner join sc b
+	on a.s_id = b.s_id
+	where a.c_id = '01' and b.c_id = '02'
+
+	查询不存在01课程但存在02课程的情况
+	select
+	*
+	from (select * from sc where s_id not in (select s_id form sc where c_id = '01')) a
+	inner join sc b
+	on a.s_id = b.s_id and b.c_id = '02'
+
+	select 
+	*
+	from sc 
+	where s_id not in (select s_id from sc where c_id = '01')
+	and c_id = '02'
+
+	2、查询01课程比02课程成绩低的学生的信息及课程分数
+	select st.* sc1.s_score  sc2.s_score
+	from student st
+	left join Score sc1 on st.s_id = sc.s_id and sc.c_id = '01'
+	left join Score sc2 on st.s_id = sc2.s_id and sc2.c_id = '02'
+	where sc1.s_score < sc2.s_score
+	
+	3、查询平均成绩大于等于60分的同学的学生编号和学生姓名和平均成绩
+	select st.s_id st.s_name,round(avg(sc.s_score)) "平均成绩"
+	form Student st
+	inner join Score sc on st.s_id = sc.s_id
+	group by st.s_id
+	having avg(sc.s_score) >= 60
+	
+	4、查询平均成绩小于60分的同学的学生编号和学生姓名和平均成绩
+	select st.s_id,st.s_name,round(avg(s_score)) "平均成绩"
+	from Student st
+	inner join Score sc on sc.s_id = st.s_id
+	group by st.s_id having avg(sc.s_score) < 60
+	
+	5、查询所有同学的学生编号、学生姓名、选课总数、所有课程的总成绩
+	select st.s_id ,st.s_name,count(sc.c_id) "选课总数",sum(sc.s_score) "所有课程成绩"
+	from Student st
+	left join Score sc on st.s_id = sc.s_id
+	group by sc.s_id
+	
+	6、查询"李"姓老师的数量
+	select count(t.t_id)
+	from Teacher t
+	where t.t_name like "李%"
+	
+	7、查询学过"张三"老师授课的同学的信息
+	
+	select st.* from Student st
+	left join Score sc on sc.s_id = st.s_id
+	left join Course c on c.c_id = sc.c_id
+	left join Teacher t on t.t_id = c.t_id
+	where t.t_name = "张三"
+
+	8、查询没有学全所有课程的同学的信息
+	select a.*,b.*
+	from student a
+	inner join score b
+	on a.s_id = b.s_id
+	group by b.s_id
+	having count(1) < (select count(1) from course)
+
+	9、查询至少有一门课与学号为01的同学所学相同的同学信息
+	select distinct b.*
+	from sc a
+	inner join student b
+	on a.s_id = b.s_id
+	where a.c_id in (select c_id from sc where s_id = '01')
+	
+	10、查询和01号同学学习的课程完全相同的其他同学的信息
+		两方面来保证：
+			1、没有01课程外的课程记录
+			2、课程数量一致
+		没有学过1号同学课程外的其他课程的同学
+			01号同学学习了哪些课程
+			select c_id from crouse where s_id = '01'
+			找到学习了1号同学课程外的同学
+			select s_id from crouce where c_id not in (select c_id from crouse where s_id = '01')
+		select a.*
+		from student a
+		inner join course b
+		on a.s_id = b.s_id
+		where a.s_id not in (select s_id from crouce where c_id not in (select c_id from crouse where s_id = '01')) and a.s_id != '01'
+		group by a.s_id
+		having count(1) = (select count(1) from course where s_id = '01')
+
+	11、查询没学过"张三"老师的任一门课的学生姓名
+		1、学习过张三老师课程的同学
+		select a.s_id
+		from score a
+		left join course b
+		on a.c_id = b.c_id
+		left join teacher c
+		on b.t_id = c.t_id
+		left join student d
+		on c.s_id = d.s_id
+		where c.t_name = "张三"
+
+		2、使用not in判断没有学过张三老师的课程的同学
+		select a.*
+		from student a
+		where s_id not in 
+		(select a.s_id
+		from score a
+		left join course b
+		on a.c_id = b.c_id
+		left join teacher c
+		on b.t_id = c.t_id
+		left join student d
+		on c.s_id = d.s_id
+		where c.t_name = "张三")
+
+	12、查询两门及其以上不及格课程的同学的学号，姓名及其平均成绩
+		1、首先可以先求平均值
+		select s_id,avg(score)
+		from score
+		group by s_id
+
+		2、求出两门以上课程不及格的同学
+		select s_id 
+		from score
+		where score < 60
+		group by s_id
+		having count(1) >= 2
+
+		3、是不是可以在求平均值的时候就筛选出我们要的同学
+		select
+			a.s_id
+			b.s_name
+			avg(a.score) avg
+		from score a
+		left join student b
+		on a.s_id = b.s_id
+		inner join 
+		(select s_id 
+		from score
+		where score < 60
+		group by s_id
+		having count(1) >= 2) c
+		on a.s_id = c.s_id
+		group by a.s_id
+
+	13、检索01课程分数小于60，按分数降序排序的学生信息
+	select 
+		b.*
+	from course a
+	left join student b
+	on a.s_id = b.s_id
+	where a.c_id = '01' and a.score < 60
+	order by score desc
+
+	14、按照平均成绩从高到低显示所有学生的所有课程的成绩以及平均成绩
+		1、求学生的平均成绩
+		select 
+			s_id
+			avg(score) as avg_score
+		from score
+		group by s_id
+
+		2、给每一条学生成绩信息加上平均成绩，然后排序
+		select
+			a.*
+			b.avg_score
+		from score a
+		left join 
+		(select 
+			s_id
+			avg(score) as avg_score
+		from score
+		group by s_id) b
+		on a.s_id = b.s_id
+		order by avg_score desc
+
+	15、查询各科成绩最高分、最低分和平均分
+	select 
+		cid,
+		max(score) as 最高分
+		min(score) as 最低分
+		avg(score) as 平均分
+		count(1) as 选修人数
+		sum(case when score >= 60 then 1 else 0 end) / count(1) as 及格率
+		sum(case when score >= 70 and score < 80 then 1 else 0 end) / count(1) as 中等率
+		
+	8、查询没学过"张三"老师授课的同学的信息
+	//张三老师授的课--找到对应的c_id
+	select c.* from course c left join teacher t on t.t_id = c.t_id where t.t_name = "张三"
+	//有张三老师课的成绩的st.s_id
+	select sc.s_id from Score sc where sc.c_id in (select c.c_id from course c left join teacher t on t.t_id = c.t_id where t.t_name = "张三")
+	//不在上面查到的st.s_id的学生信息，即没学过张三老师授课的同学信息
+	selec st.* from Student st where st.s_id not in (select sc.s_id from Score sc where sc.c_id in (select c.c_id from course c left join teacher t on t.t_id = c.t_id where t.t_name = "张三"))
+		
+	9、查询学过编号为01并且也学过编号为02的课程的同学的信息
+	select sc.s_id from Score sc where c_id = "01"
+	select sc.s_id from Score sc where c_id = "02"
+	select st.* from Student st where s_id in (select sc.s_id from Score sc where c_id = "01") and s_id in (select sc.s_id from Score sc where c_id = "02")
+	
+	select a.* 
+	from 
+		Student a,
+		Score b,
+		Score C
+	where
+		a.s_id = b.s_id
+		and a.s_id = c.s_id
+		and b.c_id = "01"
+		and c.c_id = "02"
+	
+	select st.* from Student st
+	inner join Score sc on sc.s_id = st.s_id
+	inner join Course c on c.c_id= sc.c_id and c_id = "01"
+	where st.s_id in (
+	select st2.s_id from Student st2
+	inner join Score sc2 on sc2.s_id = st2.s_id
+	inner join Course c2 on c2.c_id = sc2.c_id and c2.c_id = "02"
+	)
+	
+	10、查询学过编号为01但是没有学过编号为02的课程的同学的信息
+	select st.* from Student st
+	inner join Score sc on sc.s_id = st.s_id
+	inner join Course c on c.c_id = sc.c_id and c.c_id = "01"
+	where st.s_id not in (
+	select st2.s_id from Student st2
+	inner join Score sc2 on sc2.s_id = st2.s_id 
+	inner join course c2 on c2.c_id = sc2.c_id and c2.c_id = "02"
+	)
+	
+	11、查询没学过“张三”老师讲授的任一门课程的学生姓名
+	--张三老师讲授的课
+	select st.s_name from Student st
+	where st.s_id not in (
+	select sc.s_id from Score sc
+	inner join Course c on c.c_id = sc.c_id
+	inner join Teacher t on t.t_id = c.t_id and t.t_name = "张三"
+	)
+	
+	12、检索01课程分数小于60，按分数降序排列的学生信息
+	select st.*,sc.s_score from Student st
+	inner join Score sc on sc.s_id = st.s_id and sc.c_id = "01" and sc.s_score < 60
+	order by sc.s_score < 60 desc
+	
+	
+	
+	
+	
+	表:student (name,subject,score,stid)
+	1、计算每个人的总成绩并排名：
+		select stu.name, sum(stu.score) as allscore
+		from student stu
+		group by stid
+		order by allscore
+	2、计算每个人单科的最高成绩
+		最高成绩：
+		select stu.stid,max(stu.score) as 最高成绩 from student as stu group by stu.stid 
+		每个人单科最高成绩：
+		select a.stid,a.name,a.subject a.score from student a
+		inner join
+		(select stu.stid,max(stu.score) as maxscore from student as stu group by stu.stid) b
+		on a.stid = b.stid and a.score = b.maxscore
+	3、列出各门课程成绩最好的学生
+		查出每门课的最高成绩：
+		select subject max(score) as maxscore from stu group by subject
+		查出各门课程成绩最好的学生:
+		select t1.*
+		from stu t1
+		inner join (select subject max(score) as maxscore from stu group by subject) t2
+		where t1.subject = t2.subject and t1.score = t2.maxscore
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+		
